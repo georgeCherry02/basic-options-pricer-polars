@@ -6,8 +6,38 @@ use pricer::{option::get_call, BlackScholes};
 use chrono::prelude::Utc;
 use chrono::DateTime;
 
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct BlackScholesKwargs {
+    strike: f64,
+    risk_free_rate: f64,
+    expiry: String,
+}
+
+fn parse_python_date(datetime_str: &str) -> PolarsResult<DateTime<Utc>> {
+    DateTime::parse_from_rfc3339(datetime_str)
+        .map(|dt| dt.into())
+        .map_err(|_| PolarsError::SchemaMismatch("Failed to parse python date".into()))
+}
+
 #[polars_expr(output_type=Float64)]
-fn calculate_black_scholes(inputs: &[Series]) -> PolarsResult<Series> {
+fn calculate_black_scholes(inputs: &[Series], kwargs: BlackScholesKwargs) -> PolarsResult<Series> {
+    let underlying = inputs[0].f64()?;
+    let volatility = inputs[1].f64()?;
+    let expiry = parse_python_date(&kwargs.expiry)?;
+    let call = get_call(kwargs.strike, expiry);
+    let now = Utc::now();
+    let out: Float64Chunked =
+        arity::binary_elementwise_values(underlying, volatility, |ul, vl| -> f64 {
+            call.value_black_scholes(now, vl, ul, kwargs.risk_free_rate)
+                .unwrap_or_default()
+        });
+    Ok(out.into_series())
+}
+
+#[polars_expr(output_type=Float64)]
+fn calculate_black_scholes_explicit(inputs: &[Series]) -> PolarsResult<Series> {
     let strike = inputs[0].f64()?;
     let volatility = inputs[1].f64()?;
     let underlying = inputs[2].f64()?;

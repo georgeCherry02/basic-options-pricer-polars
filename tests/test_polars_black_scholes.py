@@ -1,7 +1,7 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from pricer_polars.bindings import calculate_black_scholes
+from pricer_polars.bindings import calculate_black_scholes_explicit
 
 import polars as pl
 
@@ -21,7 +21,7 @@ def test_polars_integration():
         "expiry": [in_four_months()] * 3,
     })
     out = df.with_columns(
-        black_scholes = calculate_black_scholes("strike", "volatility", "underlying", "rfr", "expiry")
+        black_scholes = calculate_black_scholes_explicit("strike", "volatility", "underlying", "rfr", "expiry")
     )
     value = out.row(1, named=True)["black_scholes"]
     assert is_close(value, 2.0557, 0.0001), "Valued 4 month call correctly"

@@ -8,3 +8,4 @@ chrono = "0.4.38"
 polars = "0.42.0"
 pricer = { git = "https://github.com/georgecherry02/basic-options-pricer.git", version = "0.1.0" }
 pyo3-polars = { version = "0.16.1", features = ["derive"] }
+serde = { version = "1.0.208", features = ["derive"] }

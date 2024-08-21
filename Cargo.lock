@@ -1411,6 +1411,7 @@ dependencies = [
  "polars",
  "pricer",
  "pyo3-polars",
+ "serde",
 ]
 
 [[package]]
